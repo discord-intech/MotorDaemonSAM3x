@@ -6,24 +6,28 @@
 #include "Servo.hpp"
 
 
-Servo::Servo(float lowB, float lowA, float upB, float upA) : lowerBound(lowB), upperBound(upB), lowerAngle(lowA), upperAngle(upA)
+Servo::Servo(float lowB, float lowA, float upB, float upA, char id) : lowerBound(lowB), upperBound(upB),
+                                                                      lowerAngle(lowA), upperAngle(upA), id(id), ax12(&hdSerial2)
 {}
 
-void Servo::initPWM(void)
+void Servo::initAx(void)
 {
-
-
+    ax12.begin(9600);
+    ax12.setStatusReturnLevel(id, 2);
+    ax12.setReturnDelayTime(id, 250);
+    ax12.setMovingSpeed(id, 512);
+    ax12.setMaxTorque(id, 512);
+    ax12.setGoalPosition(id, 512);
 }
 
 void Servo::setAngle(double angle)
 {
 
-    //pwm.setDutyPercent(duty);
     if(angle < lowerAngle) angle = lowerAngle;
     if(angle > upperAngle) angle = upperAngle;
 
-    int64_t value = (int64_t) ((upperBound - lowerBound) / (upperAngle - lowerAngle) * (angle + ABS(lowerAngle)) + lowerBound);
-   // pwm.setPeriodTime(period, BlackLib::milisecond);
+    int16_t value = (int16_t) ((upperBound - lowerBound) / (upperAngle - lowerAngle) * (angle + ABS(lowerAngle)) + lowerBound);
+    ax12.setGoalPosition(id, value);
 
 
 }

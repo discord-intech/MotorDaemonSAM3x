@@ -3,7 +3,6 @@
 //
 
 #include "MotionController.hpp"
-#include <math.h>
 
 bool MotionController::started;
 long MotionController::startTime;
@@ -33,17 +32,17 @@ double fastSin( double x )
     return P * (y * ABS(y) - y) + y;
 }
 
-MotionController::MotionController() :  rightMotor(), leftMotor(), direction(1650000, LOW_ANGLE, 2050000, HIGH_ANGLE), //FIXME bounds
+MotionController::MotionController() :  rightMotor(), leftMotor(), direction(1650000, LOW_ANGLE, 2050000, HIGH_ANGLE, AX12_ID), //FIXME bounds
 rightSpeedPID(), leftSpeedPID(), translationPID(), curvePID(),
 averageLeftSpeed(), averageRightSpeed(), odo()
 {
     execTime = 0;
     startTime = 0;
     
-    rightSpeedPID.setPointers(currentRightSpeed, rightPWM, rightSpeedSetpoint);
-    leftSpeedPID.setPointers(currentLeftSpeed, leftPWM, leftSpeedSetpoint);
-    translationPID.setPointers(currentDistance, translationSpeed, translationSetpoint);
-    curvePID.setPointers(currentRadius, deltaRadius, curveSetpoint);
+    rightSpeedPID.setPointers(&currentRightSpeed, &rightPWM, &rightSpeedSetpoint);
+    leftSpeedPID.setPointers(&currentLeftSpeed, &leftPWM, &leftSpeedSetpoint);
+    translationPID.setPointers(&currentDistance, &translationSpeed, &translationSetpoint);
+    curvePID.setPointers(&currentRadius, &deltaRadius, &curveSetpoint);
 
     leftSpeedPID.setOutputLimits(-255,255);
     rightSpeedPID.setOutputLimits(-255,255);
@@ -89,7 +88,7 @@ void MotionController::init()
 {
     leftMotor.initPWM();
     rightMotor.initPWM();
-    direction.initPWM();
+    direction.initAx();
 
     direction.setAngle(0);
 
@@ -107,7 +106,7 @@ void MotionController::mainWorker(MotionController *&asser)
     while(started)
     {
 
-        if(*(asser->stahp))
+        if((asser->stahp))
         {
             delay(1000 / FREQ_ASSERV);
             continue;
@@ -171,7 +170,7 @@ void MotionController::control()
         {
             sweepRadius = (sweepRadius <= 0) ? -1000 : 1000;
         }
-        *curveSetpoint = sweepRadius;
+        curveSetpoint = sweepRadius;
     }
 
     if(GOcounter > 0)
@@ -207,33 +206,33 @@ void MotionController::control()
       //  perror("Could not read time!\n");
     }
 
-    *currentLeftSpeed = (long) ((leftTicks - previousLeftTicks) / ((actualTime-startTime) / 1000000.)); // (nb-de-tick-passés)*(freq_asserv) (ticks/sec)
-    *currentRightSpeed = (long) ((rightTicks - previousRightTicks) / ((actualTime-startTime) / 1000000.));
+    currentLeftSpeed = (long) ((leftTicks - previousLeftTicks) / ((actualTime-startTime) / 1000000.)); // (nb-de-tick-passés)*(freq_asserv) (ticks/sec)
+    currentRightSpeed = (long) ((rightTicks - previousRightTicks) / ((actualTime-startTime) / 1000000.));
 
     startTime = actualTime;
 
     previousLeftTicks = leftTicks;
     previousRightTicks = rightTicks;
 
-    averageLeftSpeed.add(*currentLeftSpeed);
-    averageRightSpeed.add(*currentRightSpeed);
+    averageLeftSpeed.add(currentLeftSpeed);
+    averageRightSpeed.add(currentRightSpeed);
 
-    *currentLeftSpeed = averageLeftSpeed.value(); // On utilise pour l'asserv la valeur moyenne des dernieres current Speed
-    *currentRightSpeed = averageRightSpeed.value(); // sinon le robot il fait nawak.
+    currentLeftSpeed = averageLeftSpeed.value(); // On utilise pour l'asserv la valeur moyenne des dernieres current Speed
+    currentRightSpeed = averageRightSpeed.value(); // sinon le robot il fait nawak.
 
-    if(ABS(*currentRightSpeed - *currentLeftSpeed) > 5)
+    if(ABS(currentRightSpeed - currentLeftSpeed) > 5)
     {
-        *currentRadius = (long) ((*currentLeftSpeed * RAYON_COD_DROITE + *currentRightSpeed * RAYON_COD_GAUCHE)
-                                         / (MM_PER_TICK * (*currentRightSpeed - *currentLeftSpeed)));
+        currentRadius = (long) ((currentLeftSpeed * RAYON_COD_DROITE + currentRightSpeed * RAYON_COD_GAUCHE)
+                                         / (MM_PER_TICK * (currentRightSpeed - currentLeftSpeed)));
     }
     else
     {
-        *currentRadius = INT32_MAX;
+        currentRadius = INT32_MAX;
     }
 
 
-    *currentDistance = (leftTicks + rightTicks) / 2;
-    *currentAngle = fmod((*originAngle + TICKS_TO_RAD*(double)(rightTicks - leftTicks)) + 3.14f, 3.14f * 2) - 3.14f;
+    currentDistance = (leftTicks + rightTicks) / 2;
+    currentAngle = fmod((originAngle + TICKS_TO_RAD*(double)(rightTicks - leftTicks)) + 3.14f, 3.14f * 2) - 3.14f;
 
 
     /*if(!pointsToPass.empty() && moving)
@@ -260,20 +259,20 @@ void MotionController::control()
 
     if(controlled) translationPID.compute();
 
-    if(controlled && leftCurveRatio != 0 && rightCurveRatio != 0 && *currentLeftSpeed > 20 && *currentRightSpeed > 20
-       && ABS((double)*currentRightSpeed / (double)*currentLeftSpeed) - (rightCurveRatio / leftCurveRatio) > 0.01)
+    if(controlled && leftCurveRatio != 0 && rightCurveRatio != 0 && currentLeftSpeed > 20 && currentRightSpeed > 20
+       && ABS((double)currentRightSpeed / (double)currentLeftSpeed) - (rightCurveRatio / leftCurveRatio) > 0.01)
     {
         curvePID.compute();
     }
     else
     {
-        *deltaRadius = 0;
+        deltaRadius = 0;
     }
 
-    if(ABS(*curveSetpoint + *deltaRadius) < MAX_RADIUS)
+    if(ABS(curveSetpoint + deltaRadius) < MAX_RADIUS)
     {
-        leftCurveRatio = ((double)ABS(*curveSetpoint + *deltaRadius)-(RAYON_COD_GAUCHE*((*curveSetpoint<0)?-1.0:1.0)))/((double)ABS(*curveSetpoint + *deltaRadius)+RAYON_COD_DROITE-RAYON_COD_GAUCHE);
-        rightCurveRatio = ((double)ABS(*curveSetpoint + *deltaRadius)+(RAYON_COD_DROITE*((*curveSetpoint<0)?-1.0:1.0)))/((double)ABS(*curveSetpoint + *deltaRadius)+RAYON_COD_DROITE-RAYON_COD_GAUCHE);
+        leftCurveRatio = ((double)ABS(curveSetpoint + deltaRadius)-(RAYON_COD_GAUCHE*((curveSetpoint<0)?-1.0:1.0)))/((double)ABS(curveSetpoint + deltaRadius)+RAYON_COD_DROITE-RAYON_COD_GAUCHE);
+        rightCurveRatio = ((double)ABS(curveSetpoint + deltaRadius)+(RAYON_COD_DROITE*((curveSetpoint<0)?-1.0:1.0)))/((double)ABS(curveSetpoint + deltaRadius)+RAYON_COD_DROITE-RAYON_COD_GAUCHE);
     }
     else
     {
@@ -295,50 +294,50 @@ void MotionController::control()
 
 
     // Limitation de la consigne de vitesse en translation
-    if(*translationSpeed > maxSpeedTranslation)
-        *translationSpeed = maxSpeedTranslation;
-    else if(*translationSpeed < -maxSpeedTranslation)
-        *translationSpeed = -maxSpeedTranslation;
+    if(translationSpeed > maxSpeedTranslation)
+        translationSpeed = maxSpeedTranslation;
+    else if(translationSpeed < -maxSpeedTranslation)
+        translationSpeed = -maxSpeedTranslation;
 
 
-    *leftSpeedSetpoint = (long) (*translationSpeed * leftCurveRatio);
-    *rightSpeedSetpoint = (long) (*translationSpeed * rightCurveRatio);
+    leftSpeedSetpoint = (long) (translationSpeed * leftCurveRatio);
+    rightSpeedSetpoint = (long) (translationSpeed * rightCurveRatio);
 
     // Limitation de la vitesse
-    if(*leftSpeedSetpoint > maxSpeed)
-        *leftSpeedSetpoint = maxSpeed;
-    else if(*leftSpeedSetpoint < -maxSpeed)
-        *leftSpeedSetpoint = -maxSpeed;
-    if(*rightSpeedSetpoint > maxSpeed)
-        *rightSpeedSetpoint = maxSpeed;
-    else if(*rightSpeedSetpoint < -maxSpeed)
-        *rightSpeedSetpoint = -maxSpeed;
+    if(leftSpeedSetpoint > maxSpeed)
+        leftSpeedSetpoint = maxSpeed;
+    else if(leftSpeedSetpoint < -maxSpeed)
+        leftSpeedSetpoint = -maxSpeed;
+    if(rightSpeedSetpoint > maxSpeed)
+        rightSpeedSetpoint = maxSpeed;
+    else if(rightSpeedSetpoint < -maxSpeed)
+        rightSpeedSetpoint = -maxSpeed;
 
 
     // Limitation de l'accélération du moteur gauche (permet de règler la pente du trapèze de vitesse)
-    if(*leftSpeedSetpoint - previousLeftSpeedSetpoint > maxAcceleration)
+    if(leftSpeedSetpoint - previousLeftSpeedSetpoint > maxAcceleration)
     {
-        *leftSpeedSetpoint = (long) (previousLeftSpeedSetpoint + maxAcceleration * leftCurveRatio);
+        leftSpeedSetpoint = (long) (previousLeftSpeedSetpoint + maxAcceleration * leftCurveRatio);
     }
-    else if(*leftSpeedSetpoint - previousLeftSpeedSetpoint < -maxDecceleration)
+    else if(leftSpeedSetpoint - previousLeftSpeedSetpoint < -maxDecceleration)
     {
-        *leftSpeedSetpoint = (long) (previousLeftSpeedSetpoint - maxDecceleration * leftCurveRatio);
+        leftSpeedSetpoint = (long) (previousLeftSpeedSetpoint - maxDecceleration * leftCurveRatio);
     }
 
     // Limitation de l'acc�l�ration du moteur droit
-    if(*rightSpeedSetpoint - previousRightSpeedSetpoint > maxAcceleration)
+    if(rightSpeedSetpoint - previousRightSpeedSetpoint > maxAcceleration)
     {
-        *rightSpeedSetpoint = (long) (previousRightSpeedSetpoint + maxAcceleration * rightCurveRatio);
+        rightSpeedSetpoint = (long) (previousRightSpeedSetpoint + maxAcceleration * rightCurveRatio);
     }
-    else if(*rightSpeedSetpoint - previousRightSpeedSetpoint < -maxDecceleration)
+    else if(rightSpeedSetpoint - previousRightSpeedSetpoint < -maxDecceleration)
     {
-        *rightSpeedSetpoint = (long) (previousRightSpeedSetpoint - maxDecceleration * rightCurveRatio);
+        rightSpeedSetpoint = (long) (previousRightSpeedSetpoint - maxDecceleration * rightCurveRatio);
     }
 
 
 
-    previousLeftSpeedSetpoint = *leftSpeedSetpoint;			// Mise à jour des consignes de vitesse
-    previousRightSpeedSetpoint = *rightSpeedSetpoint;
+    previousLeftSpeedSetpoint = leftSpeedSetpoint;			// Mise à jour des consignes de vitesse
+    previousRightSpeedSetpoint = rightSpeedSetpoint;
 
 
 
@@ -348,8 +347,8 @@ void MotionController::control()
     //std::cout << "calculation time : " << Millis() - time << std::endl;
    // time = Millis();
 
-    leftMotor.run((int) *leftPWM);
-    rightMotor.run((int) *rightPWM);
+    leftMotor.run((int) leftPWM);
+    rightMotor.run((int) rightPWM);
 
     long t = Millis();
 
@@ -369,13 +368,13 @@ void MotionController::control()
 
     //std::cout << "PWM time : " << Millis() - time << std::endl;
 
-    if(servoMotor && ABS(*curveSetpoint + *deltaRadius) >= MAX_RADIUS)
+    if(servoMotor && ABS(curveSetpoint + deltaRadius) >= MAX_RADIUS)
     {
-        direction.setAngle(((*curveSetpoint + *deltaRadius) > 0 ? 1.0 : -1.0)*direction_table[MAX_RADIUS-1]);
+        direction.setAngle(((curveSetpoint + deltaRadius) > 0 ? 1.0 : -1.0)*direction_table[MAX_RADIUS-1]);
     }
     else if(servoMotor)
     {
-        direction.setAngle(((*curveSetpoint + *deltaRadius) > 0 ? 1.0 : -1.0)*direction_table[ABS(*curveSetpoint + *deltaRadius)]);
+        direction.setAngle(((curveSetpoint + deltaRadius) > 0 ? 1.0 : -1.0)*direction_table[ABS(curveSetpoint + deltaRadius)]);
     }
 
     //direction.setAngle( ((*curveSetpoint + *deltaRadius)>0 ? 1.0 : -1.0)
@@ -388,7 +387,7 @@ void MotionController::stop()
 
     //std::cout << "DEBUG : STOP" << std::endl;
 
-    *stahp = true;
+    stahp = true;
 
     leftMotor.run(0);
     rightMotor.run(0);
@@ -398,14 +397,14 @@ void MotionController::stop()
     leftMotor.run(0);
     rightMotor.run(0);
 
-    *currentDistance = (odo.getRightValue()+odo.getLeftValue())/2;
-    *translationSetpoint = *currentDistance;
-    *translationSpeed = 0;
-    *leftSpeedSetpoint = 0;
-    *rightSpeedSetpoint = 0;
-    *deltaRadius = 0;
-    *leftPWM = 0;
-    *rightPWM = 0;
+    currentDistance = (odo.getRightValue()+odo.getLeftValue())/2;
+    translationSetpoint = currentDistance;
+    translationSpeed = 0;
+    leftSpeedSetpoint = 0;
+    rightSpeedSetpoint = 0;
+    deltaRadius = 0;
+    leftPWM = 0;
+    rightPWM = 0;
 
     leftMotor.run(0);
     rightMotor.run(0);
@@ -418,7 +417,7 @@ void MotionController::stop()
     moving = false;
     controlled = true;
 
-    *stahp = false;
+    stahp = false;
 }
 
 void MotionController::setSpeedTranslation(int speed)
@@ -535,9 +534,9 @@ void MotionController::manageStop()
 void MotionController::updatePosition()
 {
     static long precedentL(0);
-    *x += (*currentDistance - precedentL)*(double)sin(1.57f - (float)*currentAngle)*MM_PER_TICK;
-    *y += (*currentDistance - precedentL)*(double)sin((float)*currentAngle)*MM_PER_TICK;
-    precedentL = *currentDistance;
+    x += (currentDistance - precedentL)*(double)sin(1.57f - (float)currentAngle)*MM_PER_TICK;
+    y += (currentDistance - precedentL)*(double)sin((float)currentAngle)*MM_PER_TICK;
+    precedentL = currentDistance;
 }
 
 void MotionController::sweep(bool way) // true >0 ; false <0
@@ -549,7 +548,7 @@ void MotionController::sweep(bool way) // true >0 ; false <0
 void MotionController::stopSweep(void)
 {
     sweeping = false;
-    *curveSetpoint = 1000000;
+    curveSetpoint = 1000000;
 }
 
 void MotionController::compute_direction_table(void)
@@ -607,13 +606,13 @@ void MotionController::orderTranslation(long mmDistance)
         moving = true;
         controlled = true;
     }
-    *translationSetpoint += (long) ((double)mmDistance / (double)MM_PER_TICK);
+    translationSetpoint += (long) ((double)mmDistance / (double)MM_PER_TICK);
   //  std::cout << "it's me order: " << *translationSetpoint << std::endl;
 }
 
 void MotionController::orderCurveRadius(long c)
 {
-    *curveSetpoint = c;
+    curveSetpoint = c;
 }
 
 void MotionController::testSpeed(int speed)
@@ -645,7 +644,7 @@ Odometry* MotionController::getOdometry(void)
 
 long MotionController::getCurveRadius(void)
 {
-    return *currentRadius;
+    return currentRadius;
 }
 
 void MotionController::setTrajectory(Cinematic list[], long distance)

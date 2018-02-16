@@ -9,8 +9,6 @@
 #ifndef PID_HPP
 #define PID_HPP
 
-#include <stdint.h>
-#include <memory>
 
 
 
@@ -21,7 +19,7 @@ public:
 
 	PID() {}
 
-    void setPointers(std::shared_ptr<long> input, std::shared_ptr<long> output, std::shared_ptr<long> setPoint)
+    void setPointers(volatile long* input, volatile long* output, volatile long* setPoint)
     {
         this->input = input;
         this->output = output;
@@ -137,9 +135,9 @@ private:
 	float ki;
 	float kd;
 
-	std::shared_ptr<long> input; //Valeur du codeur
-    std::shared_ptr<long> output; //Output : pwm
-    std::shared_ptr<long> setPoint; //Valeur ? atteindre
+	volatile long* input; //Valeur du codeur
+    volatile long* output; //Output : pwm
+    volatile long* setPoint; //Valeur a atteindre
 
 	long epsilon;
 	long outMin, outMax;
