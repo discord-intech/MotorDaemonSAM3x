@@ -1,4 +1,4 @@
-# hesmes-pilot (WIP)
+# MotorDaemon SAM3x8e (WIP)
 A feedback loop motor deamon with odometer support for the Atmel Cortex M3 SAM3x8e
 This has the UDOO QUAD as the main target behind this project.
 
