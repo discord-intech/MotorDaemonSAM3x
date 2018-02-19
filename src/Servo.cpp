@@ -13,10 +13,9 @@ Servo::Servo(float lowB, float lowA, float upB, float upA, char id) : lowerBound
 void Servo::initAx(void)
 {
     ax12.begin(9600);
-    ax12.setStatusReturnLevel(id, 2);
-    ax12.setReturnDelayTime(id, 250);
-    ax12.setMovingSpeed(id, 512);
-    ax12.setMaxTorque(id, 512);
+    ax12.setStatusReturnLevel(id, 0);
+    ax12.setMovingSpeed(id, 1023);
+    ax12.setMaxTorque(id, 1023);
     ax12.setGoalPosition(id, 512);
 }
 
