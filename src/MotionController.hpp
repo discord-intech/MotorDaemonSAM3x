@@ -13,6 +13,8 @@
 #include "Servo.hpp"
 #include "lib/Cinematic.hpp"
 #include "lib/Trajectory.hpp"
+#include "lib/DueTimer.h"
+
 
 #define AVERAGE_SPEED_SIZE	25
 
@@ -36,6 +38,8 @@
 
 #define MM_PER_TICK 1.4211
 #define TICKS_TO_RAD 0.00189
+
+#define PIN_SWITCH_ASSERV 34
 
 //#define MILLIS() std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count()
 
@@ -133,13 +137,15 @@ private:
 
     void compute_direction_table(void);
 
-    static void mainWorker(MotionController*&);
-
-
+    static void handleAsservSwitch();
 
 public:
 
     bool stahp = false;
+
+    volatile static bool stopAsserv;
+
+    void mainHandler();
 
     void control(void);
 
@@ -208,7 +214,7 @@ public:
     double getAngle(void) { return currentAngle;}
 
 
-
+    void sendStatus();
 };
 
 

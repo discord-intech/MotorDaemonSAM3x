@@ -2,12 +2,13 @@
 // Created by discord on 26/09/16.
 //
 
-#include <lib/Trajectory.hpp>
+#include <lib/cpu_com_structs.h>
 #include "MotionController.hpp"
 
 bool MotionController::started;
 long MotionController::startTime;
 long MotionController::execTime;
+volatile bool MotionController::stopAsserv;
 
 
 unsigned long Millis(void)
@@ -37,6 +38,9 @@ MotionController::MotionController() :  rightMotor(), leftMotor(), direction(165
 rightSpeedPID(), leftSpeedPID(), translationPID(), curvePID(),
 averageLeftSpeed(), averageRightSpeed(), odo()
 {
+    //FIXME stopAsserv = digitalRead(PIN_SWITCH_ASSERV) > 0;
+    stopAsserv =false;
+
     execTime = 0;
     startTime = 0;
     
@@ -96,53 +100,43 @@ void MotionController::init()
     compute_direction_table();
 
     started = true;
+
+    //FIXME attachInterrupt(digitalPinToInterrupt(PIN_SWITCH_ASSERV), MotionController::handleAsservSwitch, CHANGE);
 }
 
-void MotionController::mainWorker(MotionController *&asser)
+void MotionController::mainHandler()
 {
-    int count=0;
-    long lastTime = Millis();
+    static unsigned int count=0;
 
+    this->control();
+    count++;
 
-    while(started)
+    if(count % 5 == 0)
     {
-
-        if((asser->stahp))
-        {
-            delay(1000 / FREQ_ASSERV);
-            continue;
-        }
-
-        asser->control();
-        count++;
-
-        if(count % 5 == 0)
-        {
-            asser->manageStop();
-        }
-
-        if(count % 10 == 0)
-        {
-            asser->updatePosition();
-        }
-
-        if(count == 50000)
-        {
-            count = 0;
-            //std::cout << "Frequency : " << 50000000./(double)(Millis() - lastTime) << " Hz" << std::endl;
-           // asser->printTranslationError();
-            lastTime = Millis();
-        }
-
-        execTime = Millis() - startTime;
-
-        delay(static_cast<uint32_t>((1000 / FREQ_ASSERV) - execTime));
+        this->manageStop();
     }
+
+    if(count % 10 == 0)
+    {
+        this->updatePosition();
+        this->sendStatus();
+    }
+
 }
+
+void MotionController::handleAsservSwitch()
+{
+    stopAsserv = digitalRead(PIN_SWITCH_ASSERV) > 0;
+}
+
 
 void MotionController::control()
 {
-    static long time = Millis();
+    if(stopAsserv)
+    {
+        stop();
+        return;
+    }
 
 //    static long freq(0);
 
@@ -188,17 +182,6 @@ void MotionController::control()
     long rightTicks = odo.getRightValue();
 
     long leftTicks = odo.getLeftValue();
-
- /*   if(freq == 0)
-    {
-        *currentLeftSpeed = (leftTicks - previousLeftTicks)*FREQ_ASSERV; // (nb-de-tick-passés)*(freq_asserv) (ticks/sec)
-        *currentRightSpeed = (rightTicks - previousRightTicks)*FREQ_ASSERV;
-    }
-    else
-    {
-        *currentLeftSpeed = (leftTicks - previousLeftTicks)*freq; // (nb-de-tick-passés)*(freq_asserv) (ticks/sec)
-        *currentRightSpeed = (rightTicks - previousRightTicks)*freq;
-    }*/
 
     long actualTime = Micros();
 
@@ -335,7 +318,6 @@ void MotionController::control()
     }
 
 
-
     previousLeftSpeedSetpoint = leftSpeedSetpoint;			// Mise à jour des consignes de vitesse
     previousRightSpeedSetpoint = rightSpeedSetpoint;
 
@@ -344,29 +326,9 @@ void MotionController::control()
     leftSpeedPID.compute();		// Actualise la valeur de 'leftPWM'
     rightSpeedPID.compute();	// Actualise la valeur de 'rightPWM'
 
-    //std::cout << "calculation time : " << Millis() - time << std::endl;
-   // time = Millis();
-
     leftMotor.run((int) leftPWM);
     rightMotor.run((int) rightPWM);
 
-    long t = Millis();
-
-    if(t-time >= DELTA_FREQ_REFRESH)
-    {
-        //freq = counter / (t - time);
-        time = t;
-        //counter = 0;
-       // std::cout << "it's me : " << (long)translationPID.getPTR() << " : " <<(long)&currentDistance << " : " << currentDistance << " : " << translationSetpoint << " : " <<translationPID.getError() << std::endl;
-      /*  std::cout << "it's me : " << *leftPWM << ";" << *leftSpeedSetpoint << ";" << averageLeftSpeed.value() << " : " << *rightPWM << ";" << *rightSpeedSetpoint << ";" << averageLeftSpeed.value()
-                  << " : " << *currentDistance << ";" << *translationSetpoint << " : " << leftCurveRatio << ";" << rightCurveRatio
-                  << " : " << *curveSetpoint << ";" << *deltaRadius << " : "
-                  << ((*curveSetpoint + *deltaRadius)>0 ? 1.0 : -1.0) * ((ABS(*curveSetpoint + *deltaRadius) >= MAX_RADIUS) ? direction_table[MAX_RADIUS-1] : direction_table[ABS(*curveSetpoint + *deltaRadius)])
-                  << std::endl;*/
-    }
-   // else counter++;
-
-    //std::cout << "PWM time : " << Millis() - time << std::endl;
 
     if(servoMotor && ABS(curveSetpoint + deltaRadius) >= MAX_RADIUS)
     {
@@ -557,12 +519,14 @@ bool MotionController::isPhysicallyStopped() {
 
 const char * MotionController::getTunings(void)
 {
-    /*return (
-            std::string("LEFT SPEED : ")+std::to_string(leftSpeedPID.getKp())+std::string(" ")+std::to_string(leftSpeedPID.getKi())+std::string(" ")+std::to_string(leftSpeedPID.getKd())+std::string("\r\n")+
-            std::string("RIGHT SPEED : ")+std::to_string(rightSpeedPID.getKp())+std::string(" ")+std::to_string(rightSpeedPID.getKi())+std::string(" ")+std::to_string(rightSpeedPID.getKd())+std::string("\r\n")+
-            std::string("TRANSLATION PID : ")+std::to_string(translationPID.getKp())+std::string(" ")+std::to_string(translationPID.getKi())+std::string(" ")+std::to_string(translationPID.getKd())+std::string("\r\n")+
-            std::string("CURVE PID : ")+std::to_string(curvePID.getKp())+std::string(" ")+std::to_string(curvePID.getKi())+std::string(" ")+std::to_string(curvePID.getKd())+std::string("\r\n")
-          ).c_str();*/
+    char buffer[2048];
+    sprintf(buffer,"LM : %e %e %e\nRM : %e %e %e\nT : %e %e %e\nC : %e %e %e",
+                   leftSpeedPID.getKp(), leftSpeedPID.getKi(), leftSpeedPID.getKd(),
+                   rightSpeedPID.getKp(), rightSpeedPID.getKi(), rightSpeedPID.getKd(),
+                   translationPID.getKp(), translationPID.getKi(), translationPID.getKd(),
+                   curvePID.getKp(), curvePID.getKi(), curvePID.getKd()
+    );
+    return buffer;
 }
 
 void MotionController::setTranslationTunings(float kp, float ki, float kd)
@@ -599,7 +563,6 @@ void MotionController::orderTranslation(long mmDistance)
         controlled = true;
     }
     translationSetpoint += (long) ((double)mmDistance / (double)MM_PER_TICK);
-  //  std::cout << "it's me order: " << *translationSetpoint << std::endl;
 }
 
 void MotionController::orderCurveRadius(long c)
@@ -609,19 +572,13 @@ void MotionController::orderCurveRadius(long c)
 
 void MotionController::testSpeed(int speed)
 {
-    /*std::thread t([this, speed](){
-        *translationSpeed = speed;
-        moving = true;
-        controlled = false;
+    translationSpeed = speed;
+    moving = true;
+    controlled = false;
 
-        timespec t, r;
-        t.tv_sec= 4;
-        t.tv_nsec = 0;
-        nanosleep(&t, &r);
+    delay(2000);
 
-        stop();
-    });
-    t.detach();*/
+    stop();
 }
 
 void MotionController::orderAngle(float angle)
@@ -649,6 +606,23 @@ void MotionController::setTrajectory(volatile Trajectory* traj)
     curveSetpoint = cp->curvePoint;
     lastWay = cp->way;
     orderTranslation((lastWay ? 1 : -1)*traj->getTotalDistance());
+}
+
+void MotionController::sendStatus()
+{
+    struct cpu_com_status status{};
+    status.x = this->getX();
+    status.y = this->getY();
+    status.angle = this->getAngle();
+    status.stop = !this->moving;
+    status.speedL = this->averageLeftSpeed.value();
+    status.speedR = this->averageRightSpeed.value();
+    status.pwmL = (char) this->leftPWM;
+    status.pwmR = (char) this->rightPWM;
+
+    Serial.write((uint8_t)7);
+    Serial.write((char*)(&status), sizeof(struct cpu_com_status));
+    Serial.flush();
 }
 
 
