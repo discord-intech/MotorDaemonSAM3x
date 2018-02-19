@@ -63,8 +63,10 @@ public:
 	}
 
 	void setTunings(float kp, float ki, float kd) {
-		if (kp < 0 || ki < 0 || kd < 0)
-			return;
+
+		if(kp < 0) kp = this->kp;
+		if(ki < 0) ki = this->ki;
+		if(kd < 0) kd = this->kd;
 
 		this->kp = kp;
 		this->ki = ki;

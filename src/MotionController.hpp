@@ -174,7 +174,7 @@ public:
 
     const char* getTunings(void);
 
-    void testPosition(void);
+    void testPosition(long);
 
     void testSpeed(int);
 

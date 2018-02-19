@@ -549,9 +549,9 @@ void MotionController::setRightSpeedTunings(float kp, float ki, float kd)
     rightSpeedPID.setTunings(kp, ki, kd);
 }
 
-void MotionController::testPosition()
+void MotionController::testPosition(long dist)
 {
-    orderTranslation(distanceTest);
+    orderTranslation(dist);
 }
 
 void MotionController::orderTranslation(long mmDistance)
