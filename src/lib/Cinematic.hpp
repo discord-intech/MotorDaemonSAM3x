@@ -8,10 +8,10 @@
 class Cinematic {
 public:
 
-    Cinematic(double rel, double cur, bool way) : relativeDistance(rel), curvePoint(cur), way(way){}
+    Cinematic(long rel, long cur, bool way) : relativeDistance(rel), curvePoint(cur), way(way){}
 
-    double relativeDistance;
-    double curvePoint;
+    long relativeDistance;
+    long curvePoint;
     bool way;
 };
 

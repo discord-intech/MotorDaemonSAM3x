@@ -2,6 +2,7 @@
 // Created by discord on 26/09/16.
 //
 
+#include <lib/Trajectory.hpp>
 #include "MotionController.hpp"
 
 bool MotionController::started;
@@ -235,27 +236,26 @@ void MotionController::control()
     currentAngle = fmod((originAngle + TICKS_TO_RAD*(double)(rightTicks - leftTicks)) + 3.14f, 3.14f * 2) - 3.14f;
 
 
-    /*if(!pointsToPass.empty() && moving)
+    if(currentTrajectory && !currentTrajectory->ended() && moving)
     {
-        if(lastWay != pointsToPass.front().way)
+        if(lastWay != currentTrajectory->peekPoint()->way)
         {
-            lastWay = pointsToPass.front().way;
-            long dist = (long)((double)(*currentDistance - *translationSetpoint)*(double)MM_PER_TICK*(lastWay ? 1.0 : -1.0));
+            lastWay = currentTrajectory->peekPoint()->way;
+            long dist = (long)((double)(currentDistance - translationSetpoint)*(double)MM_PER_TICK*(lastWay ? 1.0 : -1.0));
             stop();
             orderTranslation(dist);
         }
 
-        if(ABS(*currentDistance - relativeDistanceOrigin)*MM_PER_TICK >= pointsToPass.front().relativeDistance)
+        if(ABS(currentDistance - relativeDistanceOrigin)*MM_PER_TICK >= currentTrajectory->peekPoint()->relativeDistance)
         {
-            *curveSetpoint = (long) pointsToPass.front().curvePoint;
-            pointsToPass.pop();
+            curveSetpoint = currentTrajectory->getPoint()->curvePoint;
             curvePID.resetErrors();
         }
     }
     else
     {
-        relativeDistanceOrigin = *currentDistance;
-    }*/
+        relativeDistanceOrigin = currentDistance;
+    }
 
     if(controlled) translationPID.compute();
 
@@ -392,11 +392,6 @@ void MotionController::stop()
     leftMotor.run(0);
     rightMotor.run(0);
 
-    delay(1);
-
-    leftMotor.run(0);
-    rightMotor.run(0);
-
     currentDistance = (odo.getRightValue()+odo.getLeftValue())/2;
     translationSetpoint = currentDistance;
     translationSpeed = 0;
@@ -405,9 +400,6 @@ void MotionController::stop()
     deltaRadius = 0;
     leftPWM = 0;
     rightPWM = 0;
-
-    leftMotor.run(0);
-    rightMotor.run(0);
 
     translationPID.resetErrors();
     leftSpeedPID.resetErrors();
@@ -647,16 +639,16 @@ long MotionController::getCurveRadius(void)
     return currentRadius;
 }
 
-void MotionController::setTrajectory(Cinematic list[], long distance)
+void MotionController::setTrajectory(volatile Trajectory* traj)
 {
-   /* for(Cinematic &i : list)
-    {
-        pointsToPass.push(i);
-    }
+    delete currentTrajectory;
 
-    *curveSetpoint = (long)list[0].curvePoint;
-    lastWay = list[0].way;
-    orderTranslation((lastWay ? 1 : -1)*distance);*/
+    this->currentTrajectory = traj;
+
+    Cinematic* cp = currentTrajectory->getPoint();
+    curveSetpoint = cp->curvePoint;
+    lastWay = cp->way;
+    orderTranslation((lastWay ? 1 : -1)*traj->getTotalDistance());
 }
 
 

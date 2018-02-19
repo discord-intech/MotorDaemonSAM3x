@@ -12,6 +12,7 @@
 #include "Odometry.hpp"
 #include "Servo.hpp"
 #include "lib/Cinematic.hpp"
+#include "lib/Trajectory.hpp"
 
 #define AVERAGE_SPEED_SIZE	25
 
@@ -128,6 +129,8 @@ private:
 
     float direction_table[MAX_RADIUS];
 
+    volatile Trajectory* currentTrajectory;
+
     void compute_direction_table(void);
 
     static void mainWorker(MotionController*&);
@@ -169,7 +172,7 @@ public:
 
     void testSpeed(int);
 
-    void setTrajectory(Cinematic[], long);
+    void setTrajectory(volatile Trajectory*);
 
     bool isPhysicallyStopped(void);
 
