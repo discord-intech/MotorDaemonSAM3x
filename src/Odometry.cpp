@@ -28,6 +28,9 @@ Odometry::Odometry()
     attachInterrupt(digitalPinToInterrupt(CHAN_AR), Odometry::onTickChanARight, CHANGE);
     attachInterrupt(digitalPinToInterrupt(CHAN_BR), Odometry::onTickChanBRight, CHANGE);
 
+    Serial.println("odo ok");
+    Serial.flush();
+
 }
 
 

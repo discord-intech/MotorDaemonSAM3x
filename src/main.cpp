@@ -2,14 +2,14 @@
 #include <lib/cpu_com_structs.h>
 #include "MotionController.hpp"
 
-MotionController motion;
+MotionController* motion;
 
 char buffer[4096];
 unsigned short pos = 0;
 
 void motionControllerWrapper()
 {
-    motion.mainHandler();
+    motion->mainHandler();
 }
 
 void orderHandler()
@@ -20,24 +20,21 @@ void orderHandler()
     if(!strcmp(order, "d"))
     {
         char* d = strtok(buffer, " ");
-        motion.orderTranslation(strtol(d, nullptr, 10));
-        free(d);
+        motion->orderTranslation(strtol(d, nullptr, 10));
     }
     else if(!strcmp(order, "stop"))
     {
-        motion.stop();
+        motion->stop();
     }
     else if(!strcmp(order, "cr"))
     {
         char* d = strtok(buffer, " ");
-        motion.orderCurveRadius(strtol(d, nullptr, 10));
-        free(d);
+        motion->orderCurveRadius(strtol(d, nullptr, 10));
     }
     else if(!strcmp(order, "setspeed"))
     {
         char* s = strtok(buffer, " ");
-        motion.setSpeedTranslation(strtol(s, nullptr, 10));
-        free(s);
+        motion->setSpeedTranslation(strtol(s, nullptr, 10));
     }
     else if(!strcmp(order, "traj"))
     {
@@ -56,48 +53,41 @@ void orderHandler()
         }
 
         trajectory.seek(0);
-        motion.setTrajectory(&trajectory);
-        free(info);
-        free(point);
+        motion->setTrajectory(&trajectory);
     }
     else if(!strcmp(order, "testspeed"))
     {
         char* s = strtok(buffer, " ");
-        motion.testSpeed(strtol(s, nullptr, 10));
-        free(s);
+        motion->testSpeed(strtol(s, nullptr, 10));
     }
     else if(!strcmp(order, "testpos"))
     {
         char* d = strtok(buffer, " ");
-        motion.testPosition(strtol(d, nullptr, 10));
-        free(d);
+        motion->testPosition(strtol(d, nullptr, 10));
     }
     else if(!strcmp(order, "setangle"))
     {
         char* a = strtok(buffer, " ");
-        motion.setAngle(strtod(a, nullptr));
-        free(a);
+        motion->setAngle(strtod(a, nullptr));
     }
     else if(!strcmp(order, "setpos"))
     {
         char* x = strtok(buffer, " ");
         char* y = strtok(buffer, " ");
-        motion.setPosition(strtod(x, nullptr), strtod(y, nullptr));
-        free(x);
-        free(y);
+        motion->setPosition(strtod(x, nullptr), strtod(y, nullptr));
     }
     else if(!strcmp(order, "setConsts"))
     {
-        motion.setLeftSpeedTunings(static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
+        motion->setLeftSpeedTunings(static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)));
-        motion.setRightSpeedTunings(static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
+        motion->setRightSpeedTunings(static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)));
-        motion.setTranslationTunings(static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
+        motion->setTranslationTunings(static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)));
-        motion.setCurveTunings(    static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
+        motion->setCurveTunings(    static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)),
                                    static_cast<float>(strtod(strtok(buffer, " "), nullptr)));
     }
@@ -107,9 +97,8 @@ void orderHandler()
         sprintf(result.content, "Bad order : %s", order);
     }
 
-    memset(buffer, 0, 4096);
+    memset(&buffer, 0, 4096);
     pos = 0;
-    free(order);
     Serial.write((uint8_t)5);
     Serial.write((char*)(&result), sizeof(struct cpu_com_result));
     Serial.flush();
@@ -120,17 +109,24 @@ void setup()
 {
     Serial.begin(115200);
 
-    motion = MotionController();
+    motion = new MotionController();
+
+    motion->init();
+
     Timer3.attachInterrupt(motionControllerWrapper).setFrequency(1000).start();
 }
 
 void loop()
 {
-    if(Serial.available())
+
+    if(Serial.available() > 0)
     {
         int c = Serial.read();
 
-        if(c == 10)
+        Serial.println(c);
+        Serial.flush();
+
+        if(c == 13)
         {
             buffer[pos++] = 0;
             orderHandler();

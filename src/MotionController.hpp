@@ -141,6 +141,8 @@ private:
     static void handleAsservSwitch();
     static void handleAsservSoft();
 
+    static volatile unsigned int count;
+
 public:
 
     bool stahp = false;

@@ -10,6 +10,7 @@ long MotionController::startTime;
 long MotionController::execTime;
 volatile bool MotionController::stopAsservPhy;
 volatile bool MotionController::stopAsservSoft;
+volatile unsigned int MotionController::count=0;
 
 
 unsigned long Millis(void)
@@ -109,8 +110,6 @@ void MotionController::init()
 
 void MotionController::mainHandler()
 {
-    static unsigned int count=0;
-
     this->control();
     count++;
 

@@ -8,7 +8,7 @@
 #include <wiring_private.h>
 #include <wiring_analog.h>
 #include "Motor.hpp"
-
+#include <Arduino.h>
 
 Motor::Motor(char pwm, int dir1, int dir2, bool inv) : PWMpin(pwm), directionPin(dir1), directionPin2(dir2),
                                                                        inversed(inv), actualDirection(Direction::BACKWARD)
@@ -19,6 +19,7 @@ Motor::Motor(char pwm, int dir1, int dir2, bool inv) : PWMpin(pwm), directionPin
     pinMode(LEFT_MOTOR_DIR_PIN_1, OUTPUT);
     pinMode(RIGHT_MOTOR_DIR_PIN_2, OUTPUT);
     pinMode(LEFT_MOTOR_DIR_PIN_2, OUTPUT);
+
 }
 
 LeftMotor::LeftMotor() : Motor(LEFT_MOTOR_PWM_PIN, LEFT_MOTOR_DIR_PIN_1, LEFT_MOTOR_DIR_PIN_2,  false) {}
