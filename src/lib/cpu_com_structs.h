@@ -18,8 +18,10 @@ struct cpu_com_status
     double x, y;
     double angle;
     bool stop;
+    long curveRadius;
     double speedL, speedR;
     char pwmL, pwmR;
+    bool stopPhy, stopSoft;
 };
 
 #endif //MOTORDAEMONSAM3X_CPU_COM_STRUCTS_H

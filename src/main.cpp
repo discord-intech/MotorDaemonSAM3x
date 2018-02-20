@@ -27,6 +27,12 @@ void orderHandler()
     {
         motion.stop();
     }
+    else if(!strcmp(order, "cr"))
+    {
+        char* d = strtok(buffer, " ");
+        motion.orderCurveRadius(strtol(d, nullptr, 10));
+        free(d);
+    }
     else if(!strcmp(order, "setspeed"))
     {
         char* s = strtok(buffer, " ");
@@ -71,6 +77,14 @@ void orderHandler()
         char* a = strtok(buffer, " ");
         motion.setAngle(strtod(a, nullptr));
         free(a);
+    }
+    else if(!strcmp(order, "setpos"))
+    {
+        char* x = strtok(buffer, " ");
+        char* y = strtok(buffer, " ");
+        motion.setPosition(strtod(x, nullptr), strtod(y, nullptr));
+        free(x);
+        free(y);
     }
     else if(!strcmp(order, "setConsts"))
     {

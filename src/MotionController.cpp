@@ -8,7 +8,8 @@
 bool MotionController::started;
 long MotionController::startTime;
 long MotionController::execTime;
-volatile bool MotionController::stopAsserv;
+volatile bool MotionController::stopAsservPhy;
+volatile bool MotionController::stopAsservSoft;
 
 
 unsigned long Millis(void)
@@ -38,8 +39,9 @@ MotionController::MotionController() :  rightMotor(), leftMotor(), direction(165
 rightSpeedPID(), leftSpeedPID(), translationPID(), curvePID(),
 averageLeftSpeed(), averageRightSpeed(), odo()
 {
-    //FIXME stopAsserv = digitalRead(PIN_SWITCH_ASSERV) > 0;
-    stopAsserv =false;
+    //FIXME stopAsservPhy = digitalRead(PIN_SWITCH_ASSERV) > 0;
+    stopAsservPhy =false;
+    stopAsservSoft =false;
 
     execTime = 0;
     startTime = 0;
@@ -102,6 +104,7 @@ void MotionController::init()
     started = true;
 
     //FIXME attachInterrupt(digitalPinToInterrupt(PIN_SWITCH_ASSERV), MotionController::handleAsservSwitch, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_INTERUPT_ASSERV), MotionController::handleAsservSoft, CHANGE);
 }
 
 void MotionController::mainHandler()
@@ -126,13 +129,18 @@ void MotionController::mainHandler()
 
 void MotionController::handleAsservSwitch()
 {
-    stopAsserv = digitalRead(PIN_SWITCH_ASSERV) > 0;
+    stopAsservPhy = digitalRead(PIN_SWITCH_ASSERV) <= 0;
+}
+
+void MotionController::handleAsservSoft()
+{
+    stopAsservPhy = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
 }
 
 
 void MotionController::control()
 {
-    if(stopAsserv)
+    if(stopAsservPhy || stopAsservSoft)
     {
         stop();
         return;
@@ -615,10 +623,13 @@ void MotionController::sendStatus()
     status.y = this->getY();
     status.angle = this->getAngle();
     status.stop = !this->moving;
+    status.curveRadius = this->curveSetpoint;
     status.speedL = this->averageLeftSpeed.value();
     status.speedR = this->averageRightSpeed.value();
     status.pwmL = (char) this->leftPWM;
     status.pwmR = (char) this->rightPWM;
+    status.stopPhy = stopAsservPhy;
+    status.stopSoft = stopAsservSoft;
 
     Serial.write((uint8_t)7);
     Serial.write((char*)(&status), sizeof(struct cpu_com_status));

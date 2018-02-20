@@ -40,6 +40,7 @@
 #define TICKS_TO_RAD 0.00189
 
 #define PIN_SWITCH_ASSERV 34
+#define PIN_INTERUPT_ASSERV 50
 
 //#define MILLIS() std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count()
 
@@ -138,12 +139,14 @@ private:
     void compute_direction_table(void);
 
     static void handleAsservSwitch();
+    static void handleAsservSoft();
 
 public:
 
     bool stahp = false;
 
-    volatile static bool stopAsserv;
+    volatile static bool stopAsservPhy;
+    volatile static bool stopAsservSoft;
 
     void mainHandler();
 
