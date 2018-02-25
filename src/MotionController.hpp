@@ -96,8 +96,6 @@ private:
     double leftCurveRatio;
     double rightCurveRatio;
 
-    static bool started;
-
     static long startTime;
     static long execTime;
 
@@ -113,8 +111,6 @@ private:
     long toleranceDifferentielle;
 
     long delayToEstablish; // Temps � attendre avant de consid�rer la vitesse stable
-
-    int32_t distanceTest;
 
     volatile bool moving = false;
 
@@ -132,9 +128,9 @@ private:
 
     unsigned int delayToStop;  //En ms
 
-    float direction_table[MAX_RADIUS];
+    volatile float direction_table[MAX_RADIUS];
 
-    volatile Trajectory* currentTrajectory;
+    volatile Trajectory* currentTrajectory = new Trajectory(0,0);
 
     void compute_direction_table(void);
 

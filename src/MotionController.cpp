@@ -2,10 +2,10 @@
 // Created by discord on 26/09/16.
 //
 
-#include <lib/cpu_com_structs.h>
+
+#include <lib/parson.h>
 #include "MotionController.hpp"
 
-bool MotionController::started;
 long MotionController::startTime;
 long MotionController::execTime;
 volatile bool MotionController::stopAsservPhy;
@@ -46,6 +46,8 @@ averageLeftSpeed(), averageRightSpeed(), odo()
 
     execTime = 0;
     startTime = 0;
+
+    count = 0;
     
     rightSpeedPID.setPointers(&currentRightSpeed, &rightPWM, &rightSpeedSetpoint);
     leftSpeedPID.setPointers(&currentLeftSpeed, &leftPWM, &leftSpeedSetpoint);
@@ -86,8 +88,6 @@ averageLeftSpeed(), averageRightSpeed(), odo()
     rightSpeedPID.setTunings(0.2,0.0001,0);
     curvePID.setTunings(0,0,0);
 
-    distanceTest = 200;
-
     delayToStop = 100;
 
 }
@@ -102,10 +102,8 @@ void MotionController::init()
 
     compute_direction_table();
 
-    started = true;
-
     //FIXME attachInterrupt(digitalPinToInterrupt(PIN_SWITCH_ASSERV), MotionController::handleAsservSwitch, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_INTERUPT_ASSERV), MotionController::handleAsservSoft, CHANGE);
+    //attachInterrupt(digitalPinToInterrupt(PIN_INTERUPT_ASSERV), MotionController::handleAsservSoft, CHANGE);
 }
 
 void MotionController::mainHandler()
@@ -121,6 +119,10 @@ void MotionController::mainHandler()
     if(count % 10 == 0)
     {
         this->updatePosition();
+    }
+
+    if(count % 100 == 0)
+    {
         this->sendStatus();
     }
 
@@ -192,11 +194,6 @@ void MotionController::control()
 
     long actualTime = Micros();
 
-    if(actualTime == 0)
-    {
-      //  perror("Could not read time!\n");
-    }
-
     currentLeftSpeed = (long) ((leftTicks - previousLeftTicks) / ((actualTime-startTime) / 1000000.)); // (nb-de-tick-passés)*(freq_asserv) (ticks/sec)
     currentRightSpeed = (long) ((rightTicks - previousRightTicks) / ((actualTime-startTime) / 1000000.));
 
@@ -221,12 +218,11 @@ void MotionController::control()
         currentRadius = INT32_MAX;
     }
 
-
     currentDistance = (leftTicks + rightTicks) / 2;
     currentAngle = fmod((originAngle + TICKS_TO_RAD*(double)(rightTicks - leftTicks)) + 3.14f, 3.14f * 2) - 3.14f;
 
 
-    if(currentTrajectory && !currentTrajectory->ended() && moving)
+    if(!currentTrajectory->ended() && moving)
     {
         if(lastWay != currentTrajectory->peekPoint()->way)
         {
@@ -617,22 +613,30 @@ void MotionController::setTrajectory(volatile Trajectory* traj)
 
 void MotionController::sendStatus()
 {
-    struct cpu_com_status status{};
-    status.x = this->getX();
-    status.y = this->getY();
-    status.angle = this->getAngle();
-    status.stop = !this->moving;
-    status.curveRadius = this->curveSetpoint;
-    status.speedL = this->averageLeftSpeed.value();
-    status.speedR = this->averageRightSpeed.value();
-    status.pwmL = (char) this->leftPWM;
-    status.pwmR = (char) this->rightPWM;
-    status.stopPhy = stopAsservPhy;
-    status.stopSoft = stopAsservSoft;
+    JSON_Value *root_value = json_value_init_object();
+    JSON_Object *root_object = json_value_get_object(root_value);
+    json_object_set_number(root_object, "x", this->getX());
+    json_object_set_number(root_object, "y", this->getY());
+    json_object_set_number(root_object, "angle", this->getAngle());
+    json_object_set_boolean(root_object, "stop", !this->moving);
+    json_object_set_number(root_object, "curveRadius", this->curveSetpoint);
+    json_object_set_number(root_object, "speedL", this->averageLeftSpeed.value());
+    json_object_set_number(root_object, "speedR", this->averageRightSpeed.value());
+    json_object_set_number(root_object, "pwmL", this->leftPWM);
+    json_object_set_number(root_object, "pwmR", this->rightPWM);
+    json_object_set_number(root_object, "stopPhy", this->stopAsservPhy);
+    json_object_set_number(root_object, "stopSoft", this->stopAsservSoft);
 
-    Serial.write((uint8_t)7);
-    Serial.write((char*)(&status), sizeof(struct cpu_com_status));
-    Serial.flush();
+    char *serialized_string = json_serialize_to_string(root_value);
+
+    Serial.write((uint8_t)17);
+    Serial.print(serialized_string);
+    Serial.write((uint8_t)13);
+    //Serial.write((char*)(&buffer), (size_t)(1024));
+
+    json_free_serialized_string(serialized_string);
+    json_value_free(root_value);
+//    Serial.flush();  DO NOT PUT FLUSH, CAUSES INFINITE LOOP
 }
 
 

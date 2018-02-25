@@ -1,5 +1,6 @@
 
 #include <lib/cpu_com_structs.h>
+#include <lib/parson.h>
 #include "MotionController.hpp"
 
 MotionController* motion;
@@ -15,7 +16,9 @@ void motionControllerWrapper()
 void orderHandler()
 {
     char* order = strtok(buffer, " ");
-    struct cpu_com_result result{};
+
+    char content[1000];
+    int resultCode = 0;
 
     if(!strcmp(order, "d"))
     {
@@ -93,15 +96,26 @@ void orderHandler()
     }
     else
     {
-        result.resultCode = 1;
-        sprintf(result.content, "Bad order : %s", order);
+        resultCode = 1;
+        sprintf(content, "Bad order : %s", order);
     }
 
     memset(&buffer, 0, 4096);
     pos = 0;
-    Serial.write((uint8_t)5);
-    Serial.write((char*)(&result), sizeof(struct cpu_com_result));
-    Serial.flush();
+    JSON_Value *root_value = json_value_init_object();
+    JSON_Object *root_object = json_value_get_object(root_value);
+    json_object_set_number(root_object, "code", resultCode);
+    json_object_set_string(root_object, "content", content);
+
+    char *serialized_string = json_serialize_to_string(root_value);
+
+    Serial.write((uint8_t)18);
+    Serial.print(serialized_string);
+    Serial.write((uint8_t)13);
+//    Serial.flush();
+
+    json_free_serialized_string(serialized_string);
+    json_value_free(root_value);
 }
 
 
@@ -113,7 +127,7 @@ void setup()
 
     motion->init();
 
-    Timer3.attachInterrupt(motionControllerWrapper).setFrequency(1000).start();
+    Timer5.attachInterrupt(motionControllerWrapper).setFrequency(1000).start();
 }
 
 void loop()
@@ -122,9 +136,6 @@ void loop()
     if(Serial.available() > 0)
     {
         int c = Serial.read();
-
-        Serial.println(c);
-        Serial.flush();
 
         if(c == 13)
         {

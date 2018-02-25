@@ -23,13 +23,11 @@ Odometry::Odometry()
     Odometry::valueAR = 0;
     Odometry::valueBR = 0;
 
-    attachInterrupt(digitalPinToInterrupt(CHAN_AL), Odometry::onTickChanALeft, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(CHAN_BL), Odometry::onTickChanBLeft, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(CHAN_AR), Odometry::onTickChanARight, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(CHAN_BR), Odometry::onTickChanBRight, CHANGE);
+    //attachInterrupt(digitalPinToInterrupt(CHAN_AL), Odometry::onTickChanALeft, CHANGE);
+    //attachInterrupt(digitalPinToInterrupt(CHAN_BL), Odometry::onTickChanBLeft, CHANGE);
+    //attachInterrupt(digitalPinToInterrupt(CHAN_AR), Odometry::onTickChanARight, CHANGE);
+    //attachInterrupt(digitalPinToInterrupt(CHAN_BR), Odometry::onTickChanBRight, CHANGE);
 
-    Serial.println("odo ok");
-    Serial.flush();
 
 }
 

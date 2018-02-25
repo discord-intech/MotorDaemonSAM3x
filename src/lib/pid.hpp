@@ -62,15 +62,15 @@ public:
 		(*output) = result;
 	}
 
-	void setTunings(float kp, float ki, float kd) {
+	void setTunings(float nkp, float nki, float nkd) {
 
-		if(kp < 0) kp = this->kp;
-		if(ki < 0) ki = this->ki;
-		if(kd < 0) kd = this->kd;
+		if(nkp < 0) nkp = this->kp;
+		if(nki < 0) nki = this->ki;
+		if(nkd < 0) nkd = this->kd;
 
-		this->kp = kp;
-		this->ki = ki;
-		this->kd = kd;
+		this->kp = nkp;
+		this->ki = nki;
+		this->kd = nkd;
 	}
 
 	void setOutputLimits(int32_t min, int32_t max) {
