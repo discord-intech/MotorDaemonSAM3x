@@ -624,8 +624,8 @@ void MotionController::sendStatus()
     json_object_set_number(root_object, "speedR", this->averageRightSpeed.value());
     json_object_set_number(root_object, "pwmL", this->leftPWM);
     json_object_set_number(root_object, "pwmR", this->rightPWM);
-    json_object_set_number(root_object, "stopPhy", this->stopAsservPhy);
-    json_object_set_number(root_object, "stopSoft", this->stopAsservSoft);
+    json_object_set_boolean(root_object, "stopPhy", this->stopAsservPhy);
+    json_object_set_boolean(root_object, "stopSoft", this->stopAsservSoft);
 
     char *serialized_string = json_serialize_to_string(root_value);
 
