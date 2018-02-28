@@ -85,16 +85,16 @@ private:
     long maxAcceleration;
     long maxDecceleration;
 
-    double x = 0; //mm
-    double y = 0; //mm
-    double currentAngle = 0; //rads
-    double originAngle = 0; //rads
+    volatile double x = 0.0; //mm
+    volatile double y = 0.0; //mm
+    volatile double currentAngle = 0.0; //rads
+    volatile double originAngle = 0.0; //rads
 
     //std::queue<Cinematic> pointsToPass = std::queue<Cinematic>();
 
     //Les ratios de vitesse pour commander un d�placement courbe
-    double leftCurveRatio;
-    double rightCurveRatio;
+    volatile double leftCurveRatio;
+    volatile double rightCurveRatio;
 
     static long startTime;
     static long execTime;

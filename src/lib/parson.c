@@ -41,7 +41,7 @@
 
 #define STARTING_CAPACITY 16
 #define MAX_NESTING       2048
-#define FLOAT_FORMAT      "%1.17g"
+#define FLOAT_FORMAT      "%f"
 
 #define SIZEOF_TOKEN(a)       (sizeof(a) - 1)
 #define SKIP_CHAR(str)        ((*str)++)

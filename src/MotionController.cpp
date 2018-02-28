@@ -121,7 +121,7 @@ void MotionController::mainHandler()
         this->updatePosition();
     }
 
-    if(count % 100 == 0)
+    if(count % 1000 == 0)
     {
         this->sendStatus();
     }
@@ -220,7 +220,6 @@ void MotionController::control()
 
     currentDistance = (leftTicks + rightTicks) / 2;
     currentAngle = fmod((originAngle + TICKS_TO_RAD*(double)(rightTicks - leftTicks)) + 3.14f, 3.14f * 2) - 3.14f;
-
 
     if(!currentTrajectory->ended() && moving)
     {
@@ -523,7 +522,7 @@ bool MotionController::isPhysicallyStopped() {
 const char * MotionController::getTunings(void)
 {
     char buffer[2048];
-    sprintf(buffer,"LM : %e %e %e\nRM : %e %e %e\nT : %e %e %e\nC : %e %e %e",
+    snprintf(buffer, 2048,"LM : %e %e %e\nRM : %e %e %e\nT : %e %e %e\nC : %e %e %e",
                    leftSpeedPID.getKp(), leftSpeedPID.getKi(), leftSpeedPID.getKd(),
                    rightSpeedPID.getKp(), rightSpeedPID.getKi(), rightSpeedPID.getKd(),
                    translationPID.getKp(), translationPID.getKi(), translationPID.getKd(),
@@ -613,6 +612,7 @@ void MotionController::setTrajectory(volatile Trajectory* traj)
 
 void MotionController::sendStatus()
 {
+    char *serialized_string = (char*)malloc(1024*sizeof(char));
     JSON_Value *root_value = json_value_init_object();
     JSON_Object *root_object = json_value_get_object(root_value);
     json_object_set_number(root_object, "x", this->getX());
@@ -624,17 +624,17 @@ void MotionController::sendStatus()
     json_object_set_number(root_object, "speedR", this->averageRightSpeed.value());
     json_object_set_number(root_object, "pwmL", this->leftPWM);
     json_object_set_number(root_object, "pwmR", this->rightPWM);
-    json_object_set_number(root_object, "stopPhy", this->stopAsservPhy);
-    json_object_set_number(root_object, "stopSoft", this->stopAsservSoft);
+    json_object_set_boolean(root_object, "stopPhy", this->stopAsservPhy);
+    json_object_set_boolean(root_object, "stopSoft", this->stopAsservSoft);
 
-    char *serialized_string = json_serialize_to_string(root_value);
+    json_serialize_to_buffer(root_value, serialized_string, 1024*sizeof(char));
 
     Serial.write((uint8_t)17);
-    Serial.print(serialized_string);
+    Serial.write(serialized_string, strlen(serialized_string));
     Serial.write((uint8_t)13);
     //Serial.write((char*)(&buffer), (size_t)(1024));
 
-    json_free_serialized_string(serialized_string);
+    free(serialized_string);
     json_value_free(root_value);
 //    Serial.flush();  DO NOT PUT FLUSH, CAUSES INFINITE LOOP
 }
