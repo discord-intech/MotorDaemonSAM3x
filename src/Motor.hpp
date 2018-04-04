@@ -24,10 +24,10 @@
 #define LEFT_MOTOR_PWM_PIN 2
 #define RIGHT_MOTOR_PWM_PIN 3
 
-#define LEFT_MOTOR_DIR_PIN_1 24
-#define LEFT_MOTOR_DIR_PIN_2 26
-#define RIGHT_MOTOR_DIR_PIN_1 28
-#define RIGHT_MOTOR_DIR_PIN_2 30
+#define LEFT_MOTOR_DIR_PIN_1 26
+#define LEFT_MOTOR_DIR_PIN_2 28
+#define RIGHT_MOTOR_DIR_PIN_1 30
+#define RIGHT_MOTOR_DIR_PIN_2 32
 
 
     struct direction_def {

@@ -39,8 +39,8 @@
 #define MM_PER_TICK 1.4211
 #define TICKS_TO_RAD 0.00189
 
-#define PIN_SWITCH_ASSERV 34
-#define PIN_INTERUPT_ASSERV 50
+#define PIN_SWITCH_ASSERV 50
+#define PIN_INTERUPT_ASSERV 42
 
 //#define MILLIS() std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count()
 
