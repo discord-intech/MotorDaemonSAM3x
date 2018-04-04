@@ -42,6 +42,9 @@
 #define PIN_SWITCH_ASSERV 50
 #define PIN_INTERUPT_ASSERV 42
 
+#define SENSE_L A1
+#define SENSE_R A2
+
 //#define MILLIS() std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count()
 
 
@@ -138,6 +141,8 @@ private:
     static void handleAsservSoft();
 
     static volatile unsigned int count;
+
+    volatile bool ampOverload;
 
 public:
 

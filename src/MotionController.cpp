@@ -43,6 +43,7 @@ averageLeftSpeed(), averageRightSpeed(), odo()
     //FIXME stopAsservPhy = digitalRead(PIN_SWITCH_ASSERV) > 0;
     stopAsservPhy =false;
     stopAsservSoft =false;
+    ampOverload = false;
 
     execTime = 0;
     startTime = 0;
@@ -101,6 +102,9 @@ void MotionController::init()
     direction.setAngle(0);
 
     compute_direction_table();
+
+    pinMode(SENSE_L, INPUT);
+    pinMode(SENSE_R, INPUT);
 
     //FIXME attachInterrupt(digitalPinToInterrupt(PIN_SWITCH_ASSERV), MotionController::handleAsservSwitch, CHANGE);
     //attachInterrupt(digitalPinToInterrupt(PIN_INTERUPT_ASSERV), MotionController::handleAsservSoft, CHANGE);
@@ -417,6 +421,12 @@ void MotionController::manageStop()
         }
     }
 
+    if(moving /*&&  AMP CALCULUS */ )
+    {
+        stop();
+        this->ampOverload = true;
+    }
+
     /*else if(moving && !isSpeedEstablished && !forcedMovement && curveMovement){ // V�rifie que le ratio reste bon pdt les traj courbes
 
         if (leftCurveRatio<rightCurveRatio && averageRightSpeed.value() !=0 && rightCurveRatio!=0){ // si on tourne a gauche
@@ -565,6 +575,7 @@ void MotionController::orderTranslation(long mmDistance)
         controlled = true;
     }
     translationSetpoint += (long) ((double)mmDistance / (double)MM_PER_TICK);
+    this->ampOverload = false;
 }
 
 void MotionController::orderCurveRadius(long c)
@@ -626,6 +637,7 @@ void MotionController::sendStatus()
     json_object_set_number(root_object, "pwmR", this->rightPWM);
     json_object_set_boolean(root_object, "stopPhy", this->stopAsservPhy);
     json_object_set_boolean(root_object, "stopSoft", this->stopAsservSoft);
+    json_object_set_boolean(root_object, "ampOverload", this->ampOverload);
 
     json_serialize_to_buffer(root_value, serialized_string, 1024*sizeof(char));
 
