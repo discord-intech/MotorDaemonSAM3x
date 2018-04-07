@@ -106,6 +106,10 @@ void MotionController::init()
     pinMode(SENSE_L, INPUT);
     pinMode(SENSE_R, INPUT);
 
+    //stopAsservPhy = digitalRead(PIN_SWITCH_ASSERV) <= 0;
+    stopAsservSoft = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
+
+
     //FIXME attachInterrupt(digitalPinToInterrupt(PIN_SWITCH_ASSERV), MotionController::handleAsservSwitch, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PIN_INTERUPT_ASSERV), MotionController::handleAsservSoft, CHANGE);
 }
@@ -139,7 +143,7 @@ void MotionController::handleAsservSwitch()
 
 void MotionController::handleAsservSoft()
 {
-    stopAsservPhy = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
+    stopAsservSoft = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
 }
 
 
