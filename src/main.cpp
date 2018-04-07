@@ -77,8 +77,6 @@ void orderHandler()
     {
         char* a = strtok(nullptr, " ");
         motion->setAngle(strtod(a, nullptr));
-        resultCode = 42;
-        sprintf(content, "lolnope <%s> <%f>", a, strtod(a, nullptr));
     }
     else if(!strcmp(order, "setpos"))
     {
