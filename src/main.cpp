@@ -2,6 +2,11 @@
 #include <lib/parson.h>
 #include "MotionController.hpp"
 
+#define NEON_BLUE_PIN 7
+#define NEON_GREEN_PIN 8
+#define NEON_RED_PIN 9
+
+
 
 MotionController* motion;
 
@@ -29,6 +34,16 @@ void orderHandler()
     else if(!strcmp(order, "stop"))
     {
         motion->stop();
+    }
+    else if(!strcmp(order, "neon"))
+    {
+        char* R = strtok(nullptr, " ");
+        char* G = strtok(nullptr, " ");
+        char* B = strtok(nullptr, " ");
+
+        analogWrite(NEON_BLUE_PIN, static_cast<uint32_t>(strtol(B, NULL, 10)));
+        analogWrite(NEON_GREEN_PIN, static_cast<uint32_t>(strtol(G, NULL, 10)));
+        analogWrite(NEON_RED_PIN, static_cast<uint32_t>(strtol(R, NULL, 10)));
     }
     else if(!strcmp(order, "cr"))
     {
@@ -140,6 +155,14 @@ void setup()
     motion->init();
 
     Timer5.attachInterrupt(motionControllerWrapper).setFrequency(1000).start();
+
+    pinMode(NEON_BLUE_PIN, OUTPUT);
+    pinMode(NEON_GREEN_PIN, OUTPUT);
+    pinMode(NEON_RED_PIN, OUTPUT);
+
+    analogWrite(NEON_BLUE_PIN, LOW);
+    analogWrite(NEON_GREEN_PIN, LOW);
+    analogWrite(NEON_RED_PIN, LOW);
 
     while(Serial.available() > 0) Serial.read(); // Cleaning the input buffer
 }
