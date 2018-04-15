@@ -42,6 +42,10 @@
 #define PIN_SWITCH_ASSERV 50
 #define PIN_INTERUPT_ASSERV 42
 
+#define NEON_BLUE_PIN 7
+#define NEON_GREEN_PIN 8
+#define NEON_RED_PIN 9
+
 #define SENSE_L A1
 #define SENSE_R A2
 
@@ -144,6 +148,11 @@ private:
 
     volatile bool ampOverload;
 
+    volatile unsigned char neonR;
+    volatile unsigned char neonG;
+    volatile unsigned char neonB;
+    volatile unsigned char neonSpeed;
+
 public:
 
     bool stahp = false;
@@ -219,6 +228,9 @@ public:
 
     double getAngle(void) { return currentAngle;}
 
+    void rotateColors();
+
+    void setNeonSpeed(unsigned char s) { this->neonSpeed = s; }
 
     void sendStatus();
 };

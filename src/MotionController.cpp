@@ -91,6 +91,11 @@ averageLeftSpeed(), averageRightSpeed(), odo()
 
     delayToStop = 100;
 
+    neonR = 255;
+    neonG = 0;
+    neonB = 0;
+    neonSpeed = 1;
+
 }
 
 void MotionController::init()
@@ -105,6 +110,14 @@ void MotionController::init()
 
     pinMode(SENSE_L, INPUT);
     pinMode(SENSE_R, INPUT);
+
+    pinMode(NEON_BLUE_PIN, OUTPUT);
+    pinMode(NEON_GREEN_PIN, OUTPUT);
+    pinMode(NEON_RED_PIN, OUTPUT);
+
+    analogWrite(NEON_BLUE_PIN, 0);
+    analogWrite(NEON_GREEN_PIN, 0);
+    analogWrite(NEON_RED_PIN, 255);
 
     //stopAsservPhy = digitalRead(PIN_SWITCH_ASSERV) <= 0;
     stopAsservSoft = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
@@ -122,6 +135,7 @@ void MotionController::mainHandler()
     if(count % 5 == 0)
     {
         this->manageStop();
+        this->rotateColors();
     }
 
     if(count % 10 == 0)
@@ -144,6 +158,34 @@ void MotionController::handleAsservSwitch()
 void MotionController::handleAsservSoft()
 {
     stopAsservSoft = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
+}
+
+void MotionController::rotateColors()
+{
+
+    if(neonR > 0 && neonG >= 0 && neonB == 0)
+    {
+        neonR -= neonSpeed;
+        neonG += neonSpeed;
+    }
+    else if(neonR == 0 && neonG > 0 && neonB >= 0)
+    {
+        neonG -= neonSpeed;
+        neonB += neonSpeed;
+    }
+    else if(neonR >= 0 && neonG == 0 && neonB > 0)
+    {
+        neonB -= neonSpeed;
+        neonR += neonSpeed;
+    }
+
+    neonR = MIN((unsigned char)255, MAX((unsigned char)0, neonR));
+    neonG = MIN((unsigned char)255, MAX((unsigned char)0, neonG));
+    neonB = MIN((unsigned char)255, MAX((unsigned char)0, neonB));
+
+    analogWrite(NEON_BLUE_PIN, neonB);
+    analogWrite(NEON_GREEN_PIN, neonG);
+    analogWrite(NEON_RED_PIN, neonR);
 }
 
 
