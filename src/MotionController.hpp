@@ -18,6 +18,9 @@
 
 #define AVERAGE_SPEED_SIZE	25
 
+#define STATUS_CODE_1 17
+#define STATUS_CODE_2 18
+
 #define FREQ_ASSERV 1300
 
 #define RAYON_COD_GAUCHE 115
@@ -45,6 +48,8 @@
 #define NEON_BLUE_PIN 7
 #define NEON_GREEN_PIN 8
 #define NEON_RED_PIN 9
+
+#define ORANGE_LED_PIN 38
 
 #define SENSE_L A1
 #define SENSE_R A2

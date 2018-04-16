@@ -3,6 +3,9 @@
 #include "MotionController.hpp"
 
 
+#define RESULT_CODE_1 19
+#define RESULT_CODE_2 20
+
 
 MotionController* motion;
 
@@ -127,7 +130,8 @@ void orderHandler()
 
     char *serialized_string = json_serialize_to_string(root_value);
 
-    Serial.write((uint8_t)18);
+    Serial.write((uint8_t)RESULT_CODE_1);
+    Serial.write((uint8_t)RESULT_CODE_2);
     Serial.print(serialized_string);
     Serial.write((uint8_t)13);
 //    Serial.flush();

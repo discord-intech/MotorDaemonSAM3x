@@ -135,15 +135,15 @@ void MotionController::mainHandler()
     if(count % 5 == 0)
     {
         this->manageStop();
-        this->rotateColors();
     }
 
     if(count % 10 == 0)
     {
         this->updatePosition();
+        this->rotateColors();
     }
 
-    if(count % 1000 == 0)
+    if(count % 500 == 0)
     {
         this->sendStatus();
     }
@@ -158,6 +158,7 @@ void MotionController::handleAsservSwitch()
 void MotionController::handleAsservSoft()
 {
     stopAsservSoft = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
+    digitalWrite(ORANGE_LED_PIN, stopAsservSoft ? HIGH : LOW);
 }
 
 void MotionController::rotateColors()
@@ -687,7 +688,8 @@ void MotionController::sendStatus()
 
     json_serialize_to_buffer(root_value, serialized_string, 1024*sizeof(char));
 
-    Serial.write((uint8_t)17);
+    Serial.write((uint8_t)STATUS_CODE_1);
+    Serial.write((uint8_t)STATUS_CODE_2);
     Serial.write(serialized_string, strlen(serialized_string));
     Serial.write((uint8_t)13);
     //Serial.write((char*)(&buffer), (size_t)(1024));
