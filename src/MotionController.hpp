@@ -156,7 +156,7 @@ private:
     volatile unsigned char neonR;
     volatile unsigned char neonG;
     volatile unsigned char neonB;
-    volatile unsigned char neonSpeed;
+    volatile static unsigned char neonSpeed;
 
 public:
 

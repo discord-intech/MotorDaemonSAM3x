@@ -8,6 +8,7 @@
 
 long MotionController::startTime;
 long MotionController::execTime;
+volatile unsigned char MotionController::neonSpeed;
 volatile bool MotionController::stopAsservPhy;
 volatile bool MotionController::stopAsservSoft;
 volatile unsigned int MotionController::count=0;
@@ -159,10 +160,24 @@ void MotionController::handleAsservSoft()
 {
     stopAsservSoft = digitalRead(PIN_INTERUPT_ASSERV) <= 0;
     digitalWrite(ORANGE_LED_PIN, stopAsservSoft ? HIGH : LOW);
+    if(stopAsservSoft) neonSpeed = 0;
 }
 
 void MotionController::rotateColors()
 {
+
+    if(neonSpeed <= 0)
+    {
+        neonR = 0;
+        neonG = 0;
+        neonB = 0;
+
+        analogWrite(NEON_BLUE_PIN, neonB);
+        analogWrite(NEON_GREEN_PIN, neonG);
+        analogWrite(NEON_RED_PIN, neonR);
+
+        return;
+    }
 
     if(neonR > 0 && neonG >= 0 && neonB == 0)
     {

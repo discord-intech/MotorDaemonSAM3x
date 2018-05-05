@@ -1,7 +1,7 @@
 
 #include <lib/parson.h>
 #include "MotionController.hpp"
-
+#include <vector>
 
 #define RESULT_CODE_1 19
 #define RESULT_CODE_2 20
@@ -152,6 +152,7 @@ void setup()
     Timer5.attachInterrupt(motionControllerWrapper).setFrequency(1000).start();
 
     while(Serial.available() > 0) Serial.read(); // Cleaning the input buffer
+
 }
 
 void loop()
@@ -172,4 +173,5 @@ void loop()
         }
 
     }
+
 }
